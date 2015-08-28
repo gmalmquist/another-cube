@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Cube</title>
+  <link rel="stylesheet" type="text/css" href="style.css"></link>
+</head>
+<body>
+
+<canvas id="canvas" width=100 height=100></canvas>
+
+<script type="text/javascript" src="cube.js"></script>
+
+<script type="text/javascript">
+var canvas = document.getElementById('canvas');
+var g = canvas.getContext('2d');
+
+var w = canvas.width;
+var h = canvas.height;
+
+var cam = Camera(Basis(Axis.X, Axis.Y, Axis.Z), 60);
+g = G(g, w, h);
+g.camera = cam;
+
+var A = Vec(0, 0, 1); 
+var B = Vec(1, 0.5, 1);
+
+g.strokeStyle = '#000000';
+g.lineWidth = 2.0;
+
+function Clock(func, delay, obj) {
+  delay = delay || 10;
+
+  function now() {
+    var d = new Date();
+    var n = d.getHours();
+    n = 60*n + d.getMinutes();
+    n = 60*n + d.getSeconds();
+    n = 1000*n + d.getMilliseconds();
+    return n;
+  };
+
+  var last = now();
+
+  setInterval(function() {
+    var current = now();
+    var delta = current - last;
+    last = current;
+    if (delta < delay) delta = delay;
+    func.call(obj || {}, delta);
+  }, delay);
+};
+
+Clock(function(deltaTime) {
+  g.clearRect(0, 0, w, h);
+  var that = this;
+  that.angle += 3.14*2 * deltaTime;
+
+  function T(v) {
+    return Vec.RNa(v, Axis.Y, that.angle);
+  };
+
+  var frame = Frame(Vec(0, 0, 5),
+                    T(Axis.X),
+                    T(Axis.Y),
+                    T(Axis.Z));
+  var pts = {
+    a: Vec(1, 1, 0),
+    b: Vec(1, 0, 0),
+    c: Vec(0, 0, 0),
+    d: Vec(0, 1, 0),
+  };
+
+  var pnames = Object.keys(pts).sort();
+  var letters = ['e', 'f', 'g', 'h'];
+  for (var i = 0; i < 4; i++) {
+    pts[letters[i]] = Vec.A(pts[pnames[i]], Axis.Z);
+  }
+  pnames = Object.keys(pts).sort();
+
+  pnames.forEach(function(name) {
+    pts[name] = Vec.do(function() {
+      return S(A(pts[name], V(-0.5,-0.5,-0.5)), 2.0);
+    });
+  });
+
+  pnames.forEach(function(name) {
+    pts[name] = frame.toGlobal(pts[name]);
+  });
+ 
+  for (var i = 0; i < 4; i++) {
+    var a = i;
+    var b = (i+1)%4;
+    g.edge(pts[pnames[a]], pts[pnames[b]]);
+    g.edge(pts[pnames[a+4]], pts[pnames[b+4]]);
+    g.edge(pts[pnames[a]], pts[pnames[a+4]]);
+  }
+}, 10, {angle: 0});
+
+</script>
+
+</body>
